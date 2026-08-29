@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ConvocatorIA — Analista de patrones de examen</title>
+<meta name="description" content="Analiza exámenes de convocatorias anteriores, estima la probabilidad de cada tema, se autovalida a ciegas y genera un examen simulado y un plan de estudio.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;0,800;1,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --desk:#141A2B;
+  --desk-2:#1B2340;
+  --desk-3:#222C4E;
+  --rule:#313D64;
+  --paper:#F6F5F1;
+  --paper-2:#EBE9E2;
+  --ink:#12151F;
+  --chalk:#DDE3F2;
+  --dim:#8C99BC;
+  --cold:#3E7CB1;
+  --warm:#E8A33D;
+  --sello:#C74A32;
+  --ok:#5FB08C;
+  --display:"Spectral",Georgia,serif;
+  --body:"IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --r:4px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--desk);
+  background-image:radial-gradient(ellipse 120% 80% at 50% -10%, #23305A 0%, rgba(20,26,43,0) 60%);
+  background-attachment:fixed;
+  color:var(--chalk);
+  font-family:var(--body);
+  font-size:15px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px 120px}
+
+/* ---------- cabecera ---------- */
+.top{
+  position:sticky;top:0;z-index:40;
+  background:rgba(20,26,43,.88);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--rule);
+}
+.top-in{max-width:1120px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:14px}
+.mark{font-family:var(--display);font-weight:800;font-size:21px;letter-spacing:-.02em;color:var(--paper);white-space:nowrap}
+.mark em{font-style:italic;color:var(--warm)}
+.top-tag{font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.04em;text-transform:uppercase;border-left:1px solid var(--rule);padding-left:14px}
+.top-sp{flex:1}
+
+/* ---------- hero ---------- */
+.hero{padding:56px 0 34px;border-bottom:1px solid var(--rule)}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--warm);margin:0 0 18px}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(34px,6.2vw,60px);line-height:1.02;letter-spacing:-.025em;margin:0 0 18px;color:var(--paper);max-width:14ch}
+h1 .it{font-style:italic;font-weight:600;color:var(--warm)}
+.lede{max-width:60ch;color:var(--dim);font-size:16.5px;margin:0 0 26px}
+.lede strong{color:var(--chalk);font-weight:500}
+.hero-rules{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-family:var(--mono);font-size:11.5px;color:var(--dim);border:1px solid var(--rule);border-radius:999px;padding:5px 11px}
+
+/* ---------- secciones ---------- */
+.sec{padding:38px 0;border-bottom:1px solid var(--rule)}
+.sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:6px;flex-wrap:wrap}
+.sec-num{font-family:var(--mono);font-size:11px;color:var(--warm);letter-spacing:.12em;padding-top:4px}
+h2{font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:-.015em;margin:0;color:var(--paper)}
+.sec-sub{color:var(--dim);font-size:14px;margin:0 0 22px;max-width:70ch}
+
+/* ---------- formularios ---------- */
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:repeat(3,1fr)}
+.field label{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+input[type=text],input[type=number],input[type=password],textarea,select{
+  width:100%;background:var(--desk-2);border:1px solid var(--rule);border-radius:var(--r);
+  color:var(--chalk);font-family:var(--body);font-size:14.5px;padding:10px 12px;
+}
+textarea{resize:vertical;font-family:var(--mono);font-size:13px;line-height:1.5}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--warm);outline-offset:1px;border-color:transparent}
+.hint{font-size:12.5px;color:var(--dim);margin-top:6px}
+.tipos{display:flex;flex-wrap:wrap;gap:8px}
+.tipo{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--rule);border-radius:999px;padding:6px 13px;cursor:pointer;font-size:13.5px;user-select:none}
+.tipo input{accent-color:var(--warm);margin:0}
+.tipo:has(input:checked){border-color:var(--warm);color:var(--paper);background:rgba(232,163,61,.09)}
+
+/* ---------- botones ---------- */
+button{font-family:var(--body);cursor:pointer;border-radius:var(--r);transition:transform .12s ease,background .15s ease,border-color .15s ease}
+button:active{transform:translateY(1px)}
+.btn{background:var(--warm);color:#241703;border:none;font-weight:600;font-size:14.5px;padding:11px 20px}
+.btn:hover{background:#F2B25A}
+.btn-lg{font-size:16px;padding:14px 28px}
+.btn-ghost{background:transparent;color:var(--chalk);border:1px solid var(--rule);font-size:13.5px;padding:9px 15px}
+.btn-ghost:hover{border-color:var(--warm);color:var(--paper)}
+.btn-mini{background:transparent;border:1px solid var(--rule);color:var(--dim);font-family:var(--mono);font-size:11px;padding:4px 9px}
+.btn-mini:hover{color:var(--sello);border-color:var(--sello)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--warm);outline-offset:2px}
+
+/* ---------- convocatorias ---------- */
+.conv-list{display:grid;gap:10px;margin-top:18px}
+.conv{border:1px solid var(--rule);border-radius:var(--r);background:var(--desk-2);overflow:hidden}
+.conv summary{display:flex;align-items:center;gap:12px;padding:11px 14px;cursor:pointer;list-style:none}
+.conv summary::-webkit-details-marker{display:none}
+.conv-year{font-family:var(--mono);font-weight:600;font-size:15px;color:var(--warm);min-width:5ch}
+.conv-meta{font-family:var(--mono);font-size:11.5px;color:var(--dim);flex:1}
+.conv-body{padding:0 14px 14px}
+.empty{border:1px dashed var(--rule);border-radius:var(--r);padding:26px;text-align:center;color:var(--dim);font-size:14px}
+
+/* ---------- progreso ---------- */
+.run{position:sticky;bottom:0;z-index:30;background:rgba(20,26,43,.94);backdrop-filter:blur(10px);border-top:1px solid var(--rule);padding:12px 0}
+.run-in{max-width:1120px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.steps{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.step{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--dim);border:1px solid var(--rule);border-radius:999px;padding:4px 10px}
+.step.on{color:#241703;background:var(--warm);border-color:var(--warm)}
+.step.done{color:var(--ok);border-color:var(--ok)}
+.step.fail{color:var(--sello);border-color:var(--sello)}
+
+/* ---------- matriz (elemento firma) ---------- */
+.matrix-scroll{overflow-x:auto;margin:0 -20px;padding:0 20px}
+table.mx{border-collapse:separate;border-spacing:0;width:100%;font-family:var(--mono);font-size:12px}
+table.mx th{font-weight:500;color:var(--dim);text-align:center;padding:0 0 10px;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+table.mx th.tema-h{text-align:left}
+table.mx td{padding:0;border-bottom:1px solid rgba(49,61,100,.5)}
+td.tema{font-family:var(--body);font-size:13.5px;color:var(--chalk);padding:7px 14px 7px 0;min-width:220px;max-width:340px}
+td.cell{text-align:center;width:62px}
+.cell-in{margin:2px;border-radius:2px;padding:7px 0;font-size:11.5px;color:var(--ink);font-weight:600;animation:pop .35s ease both}
+.cell-in.zero{color:var(--rule);font-weight:400;background:transparent!important;border:1px solid rgba(49,61,100,.45)}
+@keyframes pop{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:none}}
+td.num{text-align:center;color:var(--dim);width:74px;font-size:12px}
+.trend{font-size:13px;font-weight:600}
+.trend.up{color:var(--warm)}.trend.down{color:var(--cold)}.trend.flat{color:var(--dim)}
+.legend{display:flex;align-items:center;gap:10px;margin-top:14px;font-family:var(--mono);font-size:10.5px;color:var(--dim)}
+.legend-bar{height:8px;width:150px;border-radius:2px;background:linear-gradient(90deg,#2F4A78,#3E7CB1,#8FA46B,#E8A33D)}
+
+/* ---------- probabilidades ---------- */
+.prob{display:grid;grid-template-columns:minmax(180px,1.3fr) 1fr;gap:14px;align-items:start;padding:13px 0;border-bottom:1px solid rgba(49,61,100,.5)}
+.prob-name{font-size:14.5px;color:var(--paper);font-weight:500}
+.prob-just{font-size:12.8px;color:var(--dim);margin-top:3px}
+.prob-bar{height:9px;background:var(--desk-2);border-radius:2px;overflow:hidden;margin-top:7px}
+.prob-fill{height:100%;border-radius:2px;transition:width .5s ease}
+.prob-nums{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:5px}
+.prob-p{font-family:var(--mono);font-size:19px;color:var(--paper);font-weight:600;float:right;margin-left:10px}
+.warnbox{border-left:3px solid var(--sello);background:rgba(199,74,50,.09);padding:11px 14px;font-size:13.5px;margin:16px 0;border-radius:0 var(--r) var(--r) 0}
+.okbox{border-left:3px solid var(--ok);background:rgba(95,176,140,.08);padding:11px 14px;font-size:13.5px;margin:16px 0;border-radius:0 var(--r) var(--r) 0}
+
+/* ---------- métricas validación ---------- */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:20px 0}
+.metric{border:1px solid var(--rule);border-radius:var(--r);padding:16px;background:var(--desk-2)}
+.metric-v{font-family:var(--display);font-weight:800;font-size:38px;line-height:1;color:var(--warm);letter-spacing:-.02em}
+.metric-l{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin-top:9px}
+.metric-n{font-size:12.5px;color:var(--dim);margin-top:7px;line-height:1.4}
+
+/* ---------- papel: examen simulado ---------- */
+.paper{background:var(--paper);color:var(--ink);border-radius:2px;padding:38px 40px;box-shadow:0 18px 46px rgba(0,0,0,.42);margin-top:22px}
+.paper-head{border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:22px}
+.paper-head h3{font-family:var(--display);font-weight:800;font-size:23px;margin:0 0 4px;letter-spacing:-.01em}
+.paper-head .pm{font-family:var(--mono);font-size:11.5px;color:#5A6172;text-transform:uppercase;letter-spacing:.07em}
+.paper .instr{font-size:13.5px;color:#3D4356;border-left:3px solid var(--warm);padding-left:12px;margin-bottom:26px}
+.q{margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--paper-2)}
+.q:last-child{border-bottom:none}
+.q-top{display:flex;gap:12px;align-items:baseline}
+.q-n{font-family:var(--mono);font-weight:600;font-size:14px;color:var(--sello)}
+.q-text{font-size:15px;line-height:1.55;color:var(--ink);flex:1}
+.q-tags{display:flex;flex-wrap:wrap;gap:6px;margin:9px 0 0 30px}
+.tag{font-family:var(--mono);font-size:10.5px;padding:3px 8px;border-radius:2px;background:var(--paper-2);color:#4B5163}
+.tag.p{background:rgba(232,163,61,.22);color:#6B4708}
+.q-why{font-size:12.5px;color:#5A6172;margin:8px 0 0 30px;font-style:italic}
+.paper .opts{margin:9px 0 0 30px;font-size:14px;color:#3D4356}
+.paper .opts div{margin:3px 0}
+
+/* ---------- plan de estudio ---------- */
+table.plan{width:100%;border-collapse:collapse;font-size:13.5px}
+table.plan th{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);text-align:left;padding:0 10px 9px 0;font-weight:500}
+table.plan td{padding:11px 10px 11px 0;border-bottom:1px solid rgba(49,61,100,.5);vertical-align:middle}
+table.plan td.n{font-family:var(--mono);text-align:right;color:var(--chalk)}
+.rank{font-family:var(--mono);color:var(--warm);font-size:12px}
+.slider{width:88px;accent-color:var(--warm);vertical-align:middle}
+.pill{display:inline-block;font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:999px;border:1px solid var(--sello);color:var(--sello);margin-left:7px}
+.score-bar{height:6px;background:var(--desk-2);border-radius:2px;overflow:hidden;min-width:60px}
+.score-fill{height:100%;background:var(--warm)}
+
+/* ---------- varios ---------- */
+.dialog{position:fixed;inset:0;background:rgba(10,13,22,.78);display:none;align-items:center;justify-content:center;z-index:60;padding:20px}
+.dialog.on{display:flex}
+.dialog-in{background:var(--desk-2);border:1px solid var(--rule);border-radius:var(--r);padding:26px;max-width:480px;width:100%}
+.dialog h3{font-family:var(--display);font-size:21px;margin:0 0 8px;color:var(--paper)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.foot{padding:34px 0;color:var(--dim);font-size:12.8px}
+.foot a{color:var(--warm)}
+.closing{font-family:var(--display);font-style:italic;font-size:19px;color:var(--paper);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:20px 0;margin:26px 0;text-align:center}
+.hidden{display:none!important}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(232,163,61,.3);border-top-color:var(--warm);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.saved{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.saved-item{display:flex;align-items:center;gap:8px;border:1px solid var(--rule);border-radius:999px;padding:4px 6px 4px 13px;font-size:12.5px}
+.saved-item button{background:none;border:none;color:var(--dim);font-size:15px;line-height:1;padding:0 5px}
+.saved-item button:hover{color:var(--sello)}
+
+@media (max-width:760px){
+  .g2,.g3{grid-template-columns:1fr}
+  .prob{grid-template-columns:1fr}
+  .paper{padding:24px 20px}
+  .top-tag{display:none}
+  .hero{padding:38px 0 28px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms!important;transition-duration:.001ms!important}
+}
+@media print{
+  body{background:#fff;color:#000}
+  .top,.run,.hero,.no-print,.sec-num{display:none!important}
+  .sec{border:none;page-break-inside:avoid}
+  h2{color:#000}.paper{box-shadow:none}
+  td.tema,.prob-name,.metric-v{color:#000}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="mark">Convocator<em>IA</em></div>
+    <div class="top-tag">Analista de patrones de examen</div>
+    <div class="top-sp"></div>
+    <button class="btn-ghost no-print" id="btnKey">Clave API</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section class="hero">
+    <p class="eyebrow">Predicción calibrada · No adivinación</p>
+    <h1>Qué <span class="it">entra</span>, con qué probabilidad y por qué.</h1>
+    <p class="lede">Pega los exámenes de las últimas convocatorias y el temario oficial. ConvocatorIA construye la matriz tema × convocatoria, estima la probabilidad de cada tema, <strong>se valida a ciegas contra la última convocatoria real</strong> y te devuelve un examen simulado y un plan de estudio ordenado por puntos esperados por hora.</p>
+    <div class="hero-rules">
+      <span class="chip">Solo trabaja con la evidencia que le das</span>
+      <span class="chip">Distingue TEMA de PREGUNTA CONCRETA</span>
+      <span class="chip">Declara su propia tasa de acierto</span>
+      <span class="chip">Todo se queda en tu navegador</span>
+    </div>
+  </section>
+
+  <!-- 1. CONTEXTO -->
+  <section class="sec">
+    <div class="sec-head"><span class="sec-num">MATERIAL</span><h2>Contexto de la asignatura</h2></div>
+    <p class="sec-sub">Cuanto más fiel sea el temario oficial, más honesta será la matriz: las filas salen de aquí.</p>
+
+    <div class="grid g2">
+      <div class="field"><label for="asig">Asignatura</label><input type="text" id="asig" placeholder="Estadística Aplicada"></div>
+      <div class="field"><label for="titu">Titulación / Universidad</label><input type="text" id="titu" placeholder="Grado en Ciencia y Tecnología de los Alimentos — UMH"></div>
+    </div>
+
+    <div class="field" style="margin-top:14px">
+      <label for="temario">Guía docente / temario oficial</label>
+      <textarea id="temario" rows="7" placeholder="Tema 1. Estadística descriptiva&#10;Tema 2. Probabilidad&#10;Tema 3. Variables aleatorias&#10;..."></textarea>
+      <p class="hint">Si lo dejas vacío, los temas se inducen de los propios exámenes y se marcará como evidencia más débil.</p>
+    </div>
+
+    <div class="grid g3" style="margin-top:14px">
+      <div class="field"><label for="dur">Duración (min)</label><input type="number" id="dur" min="10" max="360" placeholder="120"></div>
+      <div class="field"><label for="npreg">Nº de preguntas</label><input type="number" id="npreg" min="1" max="200" placeholder="30"></div>
+      <div class="field"><label for="nota">Nota máxima</label><input type="number" id="nota" min="1" max="100" placeholder="10"></div>
+    </div>
+
+    <div class="field" style="margin-top:16px">
+      <label>Tipos permitidos</label>
+      <div class="tipos" id="tipos">
+        <label class="tipo"><input type="checkbox" value="test"> Test</label>
+        <label class="tipo"><input type="checkbox" value="desarrollo"> Desarrollo</label>
+        <label class="tipo"><input type="checkbox" value="problemas"> Problemas</label>
+        <label class="tipo"><input type="checkbox" value="caso"> Caso práctico</label>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. CONVOCATORIAS -->
+  <section class="sec">
+    <div class="sec-head"><span class="sec-num">EVIDENCIA</span><h2>Convocatorias anteriores</h2></div>
+    <p class="sec-sub">Un bloque por convocatoria, texto limpio, etiquetado con su año. Tres convocatorias es el mínimo para poder validar a ciegas; con menos, la muestra no distingue señal de ruido.</p>
+
+    <div class="row">
+      <div class="field" style="max-width:150px"><label for="newYear">Año / etiqueta</label><input type="text" id="newYear" placeholder="2025_junio"></div>
+      <button class="btn-ghost" id="btnAdd" style="margin-top:20px">Añadir convocatoria</button>
+      <label class="btn-ghost" style="margin-top:20px;display:inline-block">Importar .txt<input type="file" id="fileIn" accept=".txt,.md" multiple class="hidden"></label>
+    </div>
+
+    <div class="conv-list" id="convList"></div>
+  </section>
+
+  <!-- RESULTADOS -->
+  <div id="out"></div>
+
+  <section class="sec no-print" id="secProy">
+    <div class="sec-head"><span class="sec-num">ARCHIVO</span><h2>Análisis guardados</h2></div>
+    <p class="sec-sub">Se guardan en este navegador (IndexedDB). Nada sale de tu equipo salvo las llamadas al modelo.</p>
+    <div class="row">
+      <input type="text" id="proyName" placeholder="Nombre del análisis" style="max-width:280px">
+      <button class="btn-ghost" id="btnSave">Guardar</button>
+    </div>
+    <div class="saved" id="savedList"></div>
+  </section>
+
+  <footer class="foot">
+    <p><strong>ConvocatorIA</strong> — herramienta abierta de análisis de patrones de examen. Una aplicación de un solo fichero: descárgala y funciona sin servidor.<br>
+    Tu clave API se guarda solo en <span style="font-family:var(--mono)">localStorage</span> de este navegador y viaja únicamente a la API del modelo.</p>
+    <p>Fernando Borrás Rocher · Universidad Miguel Hernández de Elche · <a href="https://fborrasumh.github.io/ia">fborrasumh.github.io/ia</a></p>
+  </footer>
+</div>
+
+<!-- barra de ejecución -->
+<div class="run no-print" id="runbar">
+  <div class="run-in">
+    <button class="btn btn-lg" id="btnRun">Analizar convocatorias</button>
+    <div class="steps" id="steps"></div>
+    <div class="row">
+      <button class="btn-ghost hidden" id="btnMd">Descargar .md</button>
+      <button class="btn-ghost hidden" id="btnDoc">Descargar .docx</button>
+      <button class="btn-ghost hidden" id="btnPrint">Imprimir / PDF</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   ConvocatorIA — analista de patrones de examen
+   App de un solo fichero. Vanilla JS + API OpenAI + IndexedDB.
+   ========================================================= */
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid = () => Math.random().toString(36).slice(2, 9);
+
+const state = {
+  asig:'', titu:'', temario:'', dur:'', npreg:'', nota:'', tipos:[],
+  convocatorias: [],
+  dificultad: {},
+  res: null
+};
+
+/* ---------------- almacenamiento ---------------- */
+const KEY = 'ia_openai_key', MODEL = 'ia_openai_model';
+let db = null;
+function openDB(){
+  return new Promise(res => {
+    const r = indexedDB.open('convocatoria_db', 1);
+    r.onupgradeneeded = e => {
+      const d = e.target.result;
+      if(!d.objectStoreNames.contains('proyectos')) d.createObjectStore('proyectos', {keyPath:'id'});
+    };
+    r.onsuccess = e => { db = e.target.result; res(db); };
+    r.onerror = () => res(null);
+  });
+}
+function dbPut(o){ return new Promise(r => { if(!db) return r(); const t = db.transaction('proyectos','readwrite'); t.objectStore('proyectos').put(o); t.oncomplete = r; t.onerror = r; }); }
+function dbAll(){ return new Promise(r => { if(!db) return r([]); const q = db.transaction('proyectos').objectStore('proyectos').getAll(); q.onsuccess = () => r(q.result || []); q.onerror = () => r([]); }); }
+function dbDel(id){ return new Promise(r => { if(!db) return r(); const t = db.transaction('proyectos','readwrite'); t.objectStore('proyectos').delete(id); t.oncomplete = r; t.onerror = r; }); }
+
+/* ---------------- clave API ---------------- */
+$('#btnKey').onclick = () => {
+  $('#keyIn').value = localStorage.getItem(KEY) || '';
+  $('#modelIn').value = localStorage.getItem(MODEL) || 'gpt-4o-mini';
+  $('#dlgKey').classList.add('on'); $('#keyIn').focus();
+};
+$('#btnKeyCancel').onclick = () => $('#dlgKey').classList.remove('on');
+$('#btnKeySave').onclick = () => {
+  localStorage.setItem(KEY, $('#keyIn').value.trim());
+  localStorage.setItem(MODEL, $('#modelIn').value);
+  $('#dlgKey').classList.remove('on');
+};
+$('#dlgKey').addEventListener('click', e => { if(e.target.id === 'dlgKey') $('#dlgKey').classList.remove('on'); });
+
+/* ---------------- llamada al modelo ---------------- */
+async function ia(system, user, temp = 0.2){
+  const key = localStorage.getItem(KEY);
+  if(!key) throw new Error('Falta la clave API. Ábrela en «Clave API», arriba a la derecha.');
+  const model = localStorage.getItem(MODEL) || 'gpt-4o-mini';
+  const body = {
+    model, temperature: temp,
+    response_format: {type:'json_object'},
+    messages: [{role:'system', content: system}, {role:'user', content: user}]
+  };
+  let last;
+  for(let i = 0; i < 3; i++){
+    try{
+      const r = await fetch('https://api.openai.com/v1/chat/completions', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer ' + key},
+        body: JSON.stringify(body)
+      });
+      if(!r.ok){
+        const t = await r.text();
+        if(r.status === 401) throw new Error('La clave API no es válida.');
+        if(r.status === 429 || r.status >= 500){ last = new Error('El servicio respondió ' + r.status + '. Reintentando.'); await new Promise(s => setTimeout(s, 1800 * (i + 1))); continue; }
+        throw new Error('Error ' + r.status + ': ' + t.slice(0, 200));
+      }
+      const d = await r.json();
+      const txt = (d.choices?.[0]?.message?.content || '').replace(/^```json|```$/g,'').trim();
+      return JSON.parse(txt);
+    }catch(e){
+      last = e;
+      if(String(e.message).includes('clave API')) throw e;
+      if(i === 2) throw last;
+      await new Promise(s => setTimeout(s, 1200 * (i + 1)));
+    }
+  }
+  throw last;
+}
+
+const REGLAS = `REGLAS INNEGOCIABLES:
+- No eres un adivino: eres un analista de patrones que trabaja SOLO con la evidencia aportada.
+- Si un dato no está en el material, dilo. No inventes preguntas "típicas" de otras universidades ni contenidos que no aparezcan.
+- Distingue siempre entre TEMA (predecible) y PREGUNTA CONCRETA (poco predecible).
+- Declara explícitamente cuando la muestra sea demasiado pequeña para distinguir señal de ruido.
+- Responde EXCLUSIVAMENTE con un objeto JSON válido, sin texto antes ni después, sin markdown.`;
+
+function contexto(){
+  return `ASIGNATURA: ${state.asig || '(no indicada)'}
+TITULACIÓN / UNIVERSIDAD: ${state.titu || '(no indicada)'}
+RESTRICCIONES CONOCIDAS: duración ${state.dur || '?'} min · nº de preguntas ${state.npreg || '?'} · nota máxima ${state.nota || '?'} · tipos permitidos: ${state.tipos.length ? state.tipos.join(', ') : '(no indicados)'}
+GUÍA DOCENTE / TEMARIO OFICIAL:
+${state.temario.trim() || '(NO APORTADO — induce los temas de los propios exámenes y adviértelo)'}`;
+}
+function bloquesExamenes(lista){
+  return lista.map(c => `<<<AÑO_PAPER: ${c.anio}>>>\n${c.texto.trim()}\n<<<FIN ${c.anio}>>>`).join('\n\n');
+}
+
+/* ---------------- PASO 1: matriz ---------------- */
+async function paso1(lista){
+  const sys = `Actúas como miembro del tribunal que analiza los exámenes de las últimas convocatorias de una asignatura universitaria. ${REGLAS}`;
+  const usr = `${contexto()}
+
+EXÁMENES POR CONVOCATORIA:
+${bloquesExamenes(lista)}
+
+TAREA — PASO 1. Matriz de convocatorias.
+Construye la matriz tema × convocatoria. Las filas deben ser los temas del temario oficial (si se ha aportado); si un examen contiene materia que no encaja en ningún tema del temario, créala como fila aparte y márcala con "fuera_temario": true.
+Para cada tema y cada convocatoria en la que aparezca, indica el número de preguntas y los puntos asignados (si el examen no indica puntuación, reparte la nota máxima de forma proporcional y márcalo con "puntos_inferidos": true).
+No incluyas convocatorias en las que el tema no aparece.
+
+Devuelve este JSON exacto:
+{"temas":[{"tema":"nombre del tema tal como figura en el temario","fuera_temario":false,"puntos_inferidos":false,"apariciones":[{"anio":"ETIQUETA_TAL_CUAL","preguntas":2,"puntos":3}]}],
+ "total_preguntas_por_anio":[{"anio":"ETIQUETA","preguntas":30}],
+ "avisos":["observaciones sobre la calidad o el tamaño de la evidencia"]}`;
+  const r = await ia(sys, usr, 0.1);
+  return calcularMatriz(r, lista);
+}
+
+/* métricas de la matriz: se calculan aquí, no las inventa el modelo */
+function calcularMatriz(r, lista){
+  const anios = lista.map(c => c.anio);
+  const n = anios.length;
+  const temas = (r.temas || []).map(t => {
+    const ap = {};
+    (t.apariciones || []).forEach(a => {
+      const k = anios.includes(a.anio) ? a.anio : (anios.find(y => String(y) === String(a.anio)) || a.anio);
+      ap[k] = {preguntas: +a.preguntas || 0, puntos: +a.puntos || 0};
+    });
+    const veces  = anios.filter(y => (ap[y]?.preguntas || 0) > 0).length;
+    const puntos = anios.map(y => ap[y]?.puntos || 0);
+    const sumaP  = puntos.reduce((a,b) => a + b, 0);
+    const pesoMedio = veces ? sumaP / veces : 0;
+    // tendencia: media de preguntas en la mitad reciente frente a la mitad antigua
+    const q = anios.map(y => ap[y]?.preguntas || 0);
+    const m = Math.floor(n / 2);
+    const viejo = q.slice(0, n - m), nuevo = q.slice(n - m);
+    const mv = viejo.length ? viejo.reduce((a,b) => a + b, 0) / viejo.length : 0;
+    const mn = nuevo.length ? nuevo.reduce((a,b) => a + b, 0) / nuevo.length : 0;
+    const d = mn - mv;
+    const tendencia = n < 3 ? 'sin datos' : (d > 0.3 ? 'creciente' : d < -0.3 ? 'decreciente' : 'estable');
+    // años transcurridos desde la última aparición (en nº de convocatorias)
+    let desde = null;
+    for(let i = anios.length - 1; i >= 0; i--){ if((ap[anios[i]]?.preguntas || 0) > 0){ desde = anios.length - 1 - i; break; } }
+    return {
+      tema: t.tema, fuera_temario: !!t.fuera_temario, puntos_inferidos: !!t.puntos_inferidos,
+      ap, veces, frecuencia: veces / n, pesoMedio, tendencia,
+      desde, laplace: (veces + 1) / (n + 2)
+    };
+  });
+  temas.sort((a,b) => b.frecuencia - a.frecuencia || b.pesoMedio - a.pesoMedio);
+  return {anios, temas, totales: r.total_preguntas_por_anio || [], avisos: r.avisos || []};
+}
+
+/* ---------------- PASO 2: probabilidad calibrada ---------------- */
+async function paso2(mx, lista){
+  const tabla = mx.temas.map(t =>
+    `- ${t.tema} | apariciones ${t.veces}/${mx.anios.length} | años presentes: ${mx.anios.filter(y => (t.ap[y]?.preguntas||0) > 0).join(', ') || 'ninguno'} | peso medio ${t.pesoMedio.toFixed(2)} pts | tendencia ${t.tendencia} | convocatorias desde la última aparición: ${t.desde ?? 'nunca'} | base Laplace ${t.laplace.toFixed(3)}`
+  ).join('\n');
+  const sys = `Actúas como analista de patrones de examen. ${REGLAS}`;
+  const usr = `${contexto()}
+
+MATRIZ YA CALCULADA (${mx.anios.length} convocatorias: ${mx.anios.join(', ')}):
+${tabla}
+
+TAREA — PASO 2. Probabilidad calibrada.
+Para cada tema estima P(aparece en el próximo examen) como número entre 0 y 1 combinando:
+(a) la frecuencia histórica suavizada por Laplace, que ya te doy calculada;
+(b) la tendencia reciente;
+(c) el peso del tema en la guía docente;
+(d) el efecto rotación (temas que alternan y llevan una o más convocatorias sin salir).
+Justifica cada probabilidad en UNA sola línea, citando qué evidencia la mueve respecto a la base de Laplace.
+Si la muestra es demasiado pequeña para distinguir señal de ruido, dilo en "aviso_muestra" y no simules precisión.
+
+Devuelve este JSON exacto:
+{"temas":[{"tema":"exactamente como aparece arriba","p":0.72,"justificacion":"una línea"}],
+ "muestra_pequena":true,
+ "aviso_muestra":"frase explicando la limitación, o cadena vacía"}`;
+  const r = await ia(sys, usr, 0.2);
+  const map = {};
+  (r.temas || []).forEach(t => { map[t.tema] = {p: Math.max(0, Math.min(1, +t.p || 0)), j: t.justificacion || ''}; });
+  mx.temas.forEach(t => { const m = map[t.tema]; t.p = m ? m.p : t.laplace; t.just = m ? m.j : 'Sin estimación del modelo: se usa la base de Laplace.'; });
+  mx.temas.sort((a,b) => b.p - a.p);
+  return {muestra_pequena: !!r.muestra_pequena, aviso: r.aviso_muestra || ''};
+}
+
+/* ---------------- PASO 3: validación ciega ---------------- */
+async function paso3(){
+  const lista = ordenadas();
+  const holdout = lista[lista.length - 1];
+  const train = lista.slice(0, -1);
+  const mx = await paso1(train);
+  await paso2(mx, train);
+
+  const temasStr = mx.temas.map(t => `- ${t.tema}`).join('\n');
+  const sys = `Actúas como corrector que etiqueta un examen real por temas. ${REGLAS}`;
+  const usr = `LISTA DE TEMAS DE REFERENCIA:
+${temasStr}
+
+EXAMEN REAL DE LA CONVOCATORIA ${holdout.anio}:
+${holdout.texto.trim()}
+
+TAREA: indica qué temas de la lista aparecen en este examen y con cuántas preguntas cada uno. Usa el nombre del tema EXACTAMENTE como figura en la lista. Si hay materia que no encaja en ningún tema de la lista, ponla en "no_listados".
+
+Devuelve este JSON exacto:
+{"total_preguntas":30,"presentes":[{"tema":"tal cual de la lista","preguntas":3}],"no_listados":["materia no cubierta por la lista"]}`;
+  const real = await ia(sys, usr, 0.1);
+
+  const nombres = mx.temas.map(t => t.tema);
+  const presentes = (real.presentes || []).filter(p => nombres.includes(p.tema));
+  const setPres = new Set(presentes.map(p => p.tema));
+  const total = +real.total_preguntas || presentes.reduce((a,b) => a + (+b.preguntas || 0), 0) || 1;
+
+  const orden = [...mx.temas].sort((a,b) => b.p - a.p);
+  const top5 = new Set(orden.slice(0, 5).map(t => t.tema));
+  const top10 = new Set(orden.slice(0, 10).map(t => t.tema));
+
+  const cubTop5 = setPres.size ? [...setPres].filter(t => top5.has(t)).length / setPres.size * 100 : 0;
+  const pregTop10 = presentes.reduce((a, p) => a + (top10.has(p.tema) ? (+p.preguntas || 0) : 0), 0) / total * 100;
+  const brier = mx.temas.reduce((a, t) => a + Math.pow(t.p - (setPres.has(t.tema) ? 1 : 0), 2), 0) / (mx.temas.length || 1);
+
+  return {
+    holdout: holdout.anio,
+    entrenamiento: train.map(c => c.anio),
+    cubTop5, pregTop10, brier,
+    total_preguntas: total,
+    presentes,
+    no_listados: real.no_listados || [],
+    top5: orden.slice(0, 5).map(t => ({tema: t.tema, p: t.p, acierto: setPres.has(t.tema)})),
+    top10: orden.slice(0, 10).map(t => ({tema: t.tema, p: t.p, acierto: setPres.has(t.tema)}))
+  };
+}
+
+/* ---------------- PASO 4: examen simulado ---------------- */
+async function paso4(mx){
+  const top = mx.temas.slice(0, 18).map(t => `- ${t.tema} (p=${t.p.toFixed(2)}, peso medio ${t.pesoMedio.toFixed(1)} pts)`).join('\n');
+  const sys = `Actúas como miembro del tribunal que redacta el próximo examen. ${REGLAS}`;
+  const usr = `${contexto()}
+
+PROBABILIDADES ESTIMADAS:
+${top}
+
+TAREA — PASO 4. Examen simulado.
+Redacta un examen completo con el formato real de la asignatura: ${state.npreg || 'el número habitual de'} preguntas, duración ${state.dur || '?'} min, tipos permitidos ${state.tipos.length ? state.tipos.join(', ') : 'los que se deduzcan del material'}, puntuación total ${state.nota || 10}.
+Reparte las preguntas de forma coherente con las probabilidades y con el peso en puntos de cada tema. Las preguntas deben ser plausibles según lo que se ha visto en el material aportado, no preguntas genéricas de otra universidad.
+Para cada pregunta indica: tema, probabilidad estimada del tema, verbo cognitivo (recordar / aplicar / analizar) y por qué la incluyes.
+Si el tipo es test, incluye 4 opciones en "opciones" y la letra correcta en "correcta"; si no, deja "opciones" vacío.
+
+Devuelve este JSON exacto:
+{"instrucciones":"encabezado de instrucciones del examen",
+ "preguntas":[{"n":1,"tipo":"test","enunciado":"...","opciones":["a) ...","b) ...","c) ...","d) ..."],"correcta":"b","tema":"...","p":0.8,"verbo":"aplicar","puntos":0.5,"por_que":"una línea"}]}`;
+  return await ia(sys, usr, 0.5);
+}
+
+/* ---------------- PASO 5: prerrequisitos y fragilidad ---------------- */
+async function paso5(mx){
+  const tabla = mx.temas.map(t => `- ${t.tema} (p=${t.p.toFixed(2)}, peso ${t.pesoMedio.toFixed(1)} pts, ${t.veces}/${mx.anios.length} convocatorias)`).join('\n');
+  const sys = `Actúas como analista de patrones de examen que prepara un plan de estudio. ${REGLAS}`;
+  const usr = `${contexto()}
+
+TEMAS Y PROBABILIDADES:
+${tabla}
+
+TAREA — PASO 5 (parte cualitativa).
+1) Señala los temas de BAJA probabilidad que NO conviene abandonar porque son prerrequisito de otros: indica de qué temas son prerrequisito.
+2) Señala los 3 temas donde tu predicción es MÁS FRÁGIL y por qué (poca evidencia, comportamiento errático, cambio de temario, ambigüedad de etiquetado...).
+
+Devuelve este JSON exacto:
+{"prerrequisitos":[{"tema":"...","requerido_por":["tema A","tema B"],"nota":"una línea"}],
+ "fragiles":[{"tema":"...","motivo":"una línea"}]}`;
+  return await ia(sys, usr, 0.3);
+}
+
+/* ---------------- orquestación ---------------- */
+const PASOS = ['1 Matriz','2 Probabilidad','3 Validación ciega','4 Examen simulado','5 Plan de estudio'];
+function pintarPasos(estado){
+  $('#steps').innerHTML = PASOS.map((p, i) =>
+    `<span class="step ${estado[i] || ''}">${estado[i] === 'on' ? '<span class="spin"></span> ' : ''}${p}</span>`).join('');
+}
+function ordenadas(){
+  return [...state.convocatorias]
+    .filter(c => c.texto.trim())
+    .sort((a,b) => String(a.anio).localeCompare(String(b.anio), 'es', {numeric:true}));
+}
+
+$('#btnRun').onclick = async () => {
+  leerForm();
+  const lista = ordenadas();
+  if(lista.length < 2){ alert('Añade al menos 2 convocatorias con texto. Con 3 o más se puede además validar a ciegas.'); return; }
+  if(!localStorage.getItem(KEY)){ $('#btnKey').click(); return; }
+
+  const est = ['','','','',''];
+  $('#btnRun').disabled = true; $('#out').innerHTML = '';
+  const fallo = (i, e) => { est[i] = 'fail'; pintarPasos(est); $('#out').insertAdjacentHTML('beforeend',
+    `<section class="sec"><div class="warnbox"><strong>El paso ${PASOS[i]} no se completó.</strong><br>${esc(e.message)}</div></section>`); };
+
+  try{
+    est[0] = 'on'; pintarPasos(est);
+    const mx = await paso1(lista);
+    est[0] = 'done'; est[1] = 'on'; pintarPasos(est);
+
+    const p2 = await paso2(mx, lista);
+    est[1] = 'done'; pintarPasos(est);
+    state.res = {mx, p2};
+    renderMatriz(mx); renderProbs(mx, p2);
+
+    if(lista.length >= 3){
+      est[2] = 'on'; pintarPasos(est);
+      try{ const val = await paso3(); state.res.val = val; est[2] = 'done'; renderValidacion(val); }
+      catch(e){ fallo(2, e); }
+    }else{
+      est[2] = 'fail'; renderSinValidacion();
+    }
+    pintarPasos(est);
+
+    est[3] = 'on'; pintarPasos(est);
+    try{ const ex = await paso4(mx); state.res.examen = ex; est[3] = 'done'; renderExamen(ex); }
+    catch(e){ fallo(3, e); }
+    pintarPasos(est);
+
+    est[4] = 'on'; pintarPasos(est);
+    try{ const pl = await paso5(mx); state.res.plan = pl; est[4] = 'done'; renderPlan(mx, pl); }
+    catch(e){ fallo(4, e); }
+    pintarPasos(est);
+
+    renderCierre();
+    ['#btnMd','#btnDoc','#btnPrint'].forEach(s => $(s).classList.remove('hidden'));
+    guardarAuto();
+  }catch(e){
+    const i = est.findIndex(x => x === 'on');
+    fallo(i < 0 ? 0 : i, e);
+  }finally{
+    $('#btnRun').disabled = false;
+  }
+};
+
+/* ---------------- render ---------------- */
+const STOPS = [[47,74,120],[62,124,177],[143,164,107],[232,163,61]];
+function escala(t){
+  t = Math.max(0, Math.min(1, t));
+  const x = t * (STOPS.length - 1), i = Math.min(Math.floor(x), STOPS.length - 2), f = x - i;
+  const c = STOPS[i].map((v, k) => Math.round(v + (STOPS[i+1][k] - v) * f));
+  return `rgb(${c.join(',')})`;
+}
+function seccion(num, titulo, sub, cuerpo){
+  return `<section class="sec"><div class="sec-head"><span class="sec-num">${num}</span><h2>${titulo}</h2></div>
+  ${sub ? `<p class="sec-sub">${sub}</p>` : ''}${cuerpo}</section>`;
+}
+
+function renderMatriz(mx){
+  const maxQ = Math.max(1, ...mx.temas.flatMap(t => mx.anios.map(y => t.ap[y]?.preguntas || 0)));
+  const filas = mx.temas.map((t, i) => {
+    const celdas = mx.anios.map(y => {
+      const a = t.ap[y];
+      const q = a?.preguntas || 0;
+      if(!q) return `<td class="cell"><div class="cell-in zero">·</div></td>`;
+      const bg = escala(q / maxQ);
+      return `<td class="cell"><div class="cell-in" style="background:${bg};animation-delay:${Math.min(i * 18, 400)}ms" title="${q} pregunta(s), ${(a.puntos||0)} pts">${q}<span style="opacity:.65;font-weight:400"> · ${(a.puntos || 0)}p</span></div></td>`;
+    }).join('');
+    const fl = {creciente:'up', decreciente:'down'}[t.tendencia] || 'flat';
+    const fs = {creciente:'↗', decreciente:'↘', estable:'→'}[t.tendencia] || '·';
+    return `<tr>
+      <td class="tema">${esc(t.tema)}${t.fuera_temario ? ' <span class="pill">fuera de temario</span>' : ''}</td>
+      ${celdas}
+      <td class="num">${t.veces}/${mx.anios.length}</td>
+      <td class="num">${t.pesoMedio.toFixed(1)}</td>
+      <td class="num"><span class="trend ${fl}" title="${t.tendencia}">${fs}</span></td>
+      <td class="num">${t.desde === null ? '—' : t.desde}</td>
+    </tr>`;
+  }).join('');
+
+  const cuerpo = `<div class="matrix-scroll"><table class="mx">
+    <thead><tr><th class="tema-h">Tema</th>${mx.anios.map(y => `<th>${esc(y)}</th>`).join('')}
+    <th>Frec.</th><th>Peso medio</th><th>Tend.</th><th>Conv. sin salir</th></tr></thead>
+    <tbody>${filas}</tbody></table></div>
+    <div class="legend"><span>menos preguntas</span><span class="legend-bar"></span><span>más preguntas</span>
+    <span style="margin-left:auto">Cada celda: nº de preguntas · puntos</span></div>
+    ${mx.avisos.length ? `<div class="warnbox">${mx.avisos.map(esc).join('<br>')}</div>` : ''}`;
+  $('#out').insertAdjacentHTML('beforeend', seccion('PASO 1', 'Matriz de convocatorias',
+    'Filas: temas del temario oficial. Columnas: convocatorias. Frecuencia, peso medio en puntos, tendencia y convocatorias transcurridas desde la última aparición se calculan aquí, no los estima el modelo.', cuerpo));
+}
+
+function renderProbs(mx, p2){
+  const filas = mx.temas.map(t => `
+    <div class="prob">
+      <div><div class="prob-name">${esc(t.tema)}</div><div class="prob-just">${esc(t.just)}</div></div>
+      <div>
+        <div class="prob-p">${(t.p * 100).toFixed(0)}%</div>
+        <div class="prob-bar"><div class="prob-fill" style="width:${(t.p * 100).toFixed(1)}%;background:${escala(t.p)}"></div></div>
+        <div class="prob-nums"><span>base Laplace ${(t.laplace * 100).toFixed(0)}%</span><span>${t.veces}/${mx.anios.length} convocatorias · ${t.pesoMedio.toFixed(1)} pts · ${t.tendencia}</span></div>
+      </div>
+    </div>`).join('');
+  const aviso = p2.muestra_pequena || mx.anios.length < 4
+    ? `<div class="warnbox"><strong>Muestra pequeña.</strong> ${esc(p2.aviso || 'Con pocas convocatorias, la diferencia entre un tema del 60% y uno del 45% no distingue señal de ruido. Léelo como orden de prioridad, no como porcentaje fiable.')}</div>` : '';
+  $('#out').insertAdjacentHTML('beforeend', seccion('PASO 2', 'Probabilidad calibrada',
+    'P(aparece en el próximo examen) combinando frecuencia suavizada por Laplace, tendencia reciente, peso en la guía docente y efecto rotación. La barra gris de referencia es la base de Laplace: lo que se separa de ella es el juicio del modelo, y va justificado.',
+    aviso + filas));
+}
+
+function renderValidacion(v){
+  const lista = v.top10.map((t, i) => `<tr><td class="rank">${String(i+1).padStart(2,'0')}</td><td>${esc(t.tema)}</td>
+    <td class="n">${(t.p*100).toFixed(0)}%</td>
+    <td class="n" style="color:${t.acierto ? 'var(--ok)' : 'var(--dim)'}">${t.acierto ? 'sí salió' : 'no salió'}</td></tr>`).join('');
+  const cuerpo = `
+    <div class="okbox">Predicción hecha solo con <strong>${v.entrenamiento.map(esc).join(', ')}</strong>, ocultando <strong>${esc(v.holdout)}</strong>. Después se ha comparado con lo que realmente cayó en ${esc(v.holdout)}.</div>
+    <div class="metrics">
+      <div class="metric"><div class="metric-v">${v.cubTop5.toFixed(0)}%</div><div class="metric-l">Temas reales en mi top-5</div><div class="metric-n">De los temas que de verdad salieron, esta fracción estaba entre mis 5 primeros.</div></div>
+      <div class="metric"><div class="metric-v">${v.pregTop10.toFixed(0)}%</div><div class="metric-l">Preguntas cubiertas por el top-10</div><div class="metric-n">Porcentaje de las ${v.total_preguntas} preguntas reales que caían en mis 10 temas más probables.</div></div>
+      <div class="metric"><div class="metric-v">${v.brier.toFixed(3)}</div><div class="metric-l">Brier score medio</div><div class="metric-n">0 es perfecto; 0,25 equivale a decir 50% en todo. Esta es mi tasa de acierto esperada, no una cifra genérica.</div></div>
+    </div>
+    <table class="plan"><thead><tr><th>#</th><th>Tema predicho (sin ver ${esc(v.holdout)})</th><th style="text-align:right">P estimada</th><th style="text-align:right">Realidad</th></tr></thead><tbody>${lista}</tbody></table>
+    ${v.no_listados.length ? `<div class="warnbox"><strong>Materia de ${esc(v.holdout)} que no encajaba en ningún tema predicho:</strong> ${v.no_listados.map(esc).join('; ')}.</div>` : ''}`;
+  $('#out').insertAdjacentHTML('beforeend', seccion('PASO 3', 'Validación ciega',
+    'El paso que convierte esto en una predicción evaluable: se repiten los pasos 1 y 2 ocultando la convocatoria más reciente y se mide el acierto contra ella.', cuerpo));
+}
+function renderSinValidacion(){
+  $('#out').insertAdjacentHTML('beforeend', seccion('PASO 3', 'Validación ciega',
+    'No ejecutada.', `<div class="warnbox"><strong>Hacen falta al menos 3 convocatorias.</strong> Con dos, ocultar la última deja una sola para entrenar y cualquier tasa de acierto sería un espejismo. Sin este paso no hay tasa de acierto declarada: trata las probabilidades de arriba como una ordenación, no como una medida.</div>`));
+}
+
+function renderExamen(ex){
+  const qs = (ex.preguntas || []).map(q => `
+    <div class="q">
+      <div class="q-top"><span class="q-n">${q.n ?? ''}.</span><div class="q-text">${esc(q.enunciado)}</div></div>
+      ${(q.opciones || []).length ? `<div class="opts">${q.opciones.map(o => `<div>${esc(o)}</div>`).join('')}</div>` : ''}
+      <div class="q-tags">
+        <span class="tag">${esc(q.tema)}</span>
+        <span class="tag p">p ${Math.round((+q.p || 0) * 100)}%</span>
+        <span class="tag">${esc(q.verbo || '')}</span>
+        <span class="tag">${esc(q.tipo || '')}</span>
+        <span class="tag">${q.puntos ?? '?'} pts</span>
+        ${q.correcta ? `<span class="tag">correcta: ${esc(q.correcta)}</span>` : ''}
+      </div>
+      <div class="q-why">${esc(q.por_que || '')}</div>
+    </div>`).join('');
+  const cuerpo = `<div class="paper">
+    <div class="paper-head"><h3>${esc(state.asig || 'Examen simulado')}</h3>
+    <div class="pm">${esc(state.titu || '')} · ${state.dur || '?'} min · ${(ex.preguntas || []).length} preguntas · ${state.nota || 10} puntos</div></div>
+    ${ex.instrucciones ? `<div class="instr">${esc(ex.instrucciones)}</div>` : ''}
+    ${qs}</div>`;
+  $('#out').insertAdjacentHTML('beforeend', seccion('PASO 4', 'Examen simulado',
+    'Formato real, no contenido real. Cada pregunta lleva su tema, la probabilidad estimada de ese tema, el verbo cognitivo y el motivo de incluirla. El TEMA es predecible; la PREGUNTA CONCRETA no lo es.', cuerpo));
+}
+
+function renderPlan(mx, pl){
+  state.plan = pl;
+  const cuerpo = `<div id="planBox"></div>
+    ${(pl.prerrequisitos || []).length ? `<div class="okbox"><strong>Baja probabilidad, pero no los abandones:</strong><br>${
+      pl.prerrequisitos.map(p => `<strong>${esc(p.tema)}</strong> — prerrequisito de ${p.requerido_por.map(esc).join(', ')}. ${esc(p.nota || '')}`).join('<br>')}</div>` : ''}`;
+  $('#out').insertAdjacentHTML('beforeend', seccion('PASO 5', 'Plan de estudio',
+    'Ordenado por puntos esperados por hora de estudio: probabilidad × peso en puntos ÷ dificultad. La dificultad la pones tú, porque es la única variable que el modelo no puede saber. Mueve los deslizadores y el orden se recalcula.', cuerpo));
+  pintarPlan(mx);
+}
+function pintarPlan(mx){
+  const filas = mx.temas.map(t => {
+    const d = state.dificultad[t.tema] ?? 3;
+    const score = t.p * (t.pesoMedio || 0.5) / d;
+    const pre = (state.plan?.prerrequisitos || []).some(p => p.tema === t.tema);
+    return {t, d, score, pre};
+  }).sort((a,b) => b.score - a.score);
+  const max = Math.max(...filas.map(f => f.score), 0.001);
+  $('#planBox').innerHTML = `<table class="plan">
+    <thead><tr><th>#</th><th>Tema</th><th>Dificultad para ti</th><th style="text-align:right">P</th><th style="text-align:right">Peso</th><th style="text-align:right">Pts/hora</th><th>Prioridad</th></tr></thead>
+    <tbody>${filas.map((f, i) => `<tr>
+      <td class="rank">${String(i+1).padStart(2,'0')}</td>
+      <td>${esc(f.t.tema)}${f.pre ? '<span class="pill">prerrequisito</span>' : ''}</td>
+      <td><input type="range" class="slider" min="1" max="5" step="1" value="${f.d}" data-tema="${esc(f.t.tema)}"> <span style="font-family:var(--mono);font-size:12px;color:var(--dim)">${f.d}/5</span></td>
+      <td class="n">${(f.t.p * 100).toFixed(0)}%</td>
+      <td class="n">${f.t.pesoMedio.toFixed(1)}</td>
+      <td class="n">${f.score.toFixed(2)}</td>
+      <td><div class="score-bar"><div class="score-fill" style="width:${(f.score / max * 100).toFixed(0)}%"></div></div></td>
+    </tr>`).join('')}</tbody></table>`;
+  $$('#planBox .slider').forEach(s => s.oninput = () => {
+    state.dificultad[s.dataset.tema] = +s.value;
+    clearTimeout(window._pt); window._pt = setTimeout(() => pintarPlan(mx), 220);
+  });
+}
+
+function renderCierre(){
+  const fr = state.res?.plan?.fragiles || [];
+  $('#out').insertAdjacentHTML('beforeend', `<section class="sec">
+    <div class="closing">«Esta predicción prioriza el estudio, no lo sustituye.»</div>
+    ${fr.length ? `<div class="sec-head"><span class="sec-num">FRAGILIDAD</span><h2>Dónde mi predicción es más frágil</h2></div>
+    <div class="warnbox">${fr.slice(0,3).map(f => `<strong>${esc(f.tema)}</strong> — ${esc(f.motivo)}`).join('<br>')}</div>` : ''}
+  </section>`);
+}
+
+/* ---------------- convocatorias: UI ---------------- */
+function renderConv(){
+  const l = $('#convList');
+  if(!state.convocatorias.length){
+    l.innerHTML = `<div class="empty">Todavía no hay convocatorias. Escribe un año arriba y pulsa «Añadir convocatoria», o importa ficheros .txt.</div>`;
+    return;
+  }
+  l.innerHTML = state.convocatorias.map(c => `
+    <details class="conv" ${c.texto ? '' : 'open'} data-id="${c.id}">
+      <summary>
+        <span class="conv-year">${esc(c.anio)}</span>
+        <span class="conv-meta">${c.texto.trim() ? c.texto.trim().length.toLocaleString('es') + ' caracteres' : 'vacía — pega aquí el examen'}</span>
+        <button class="btn-mini" data-del="${c.id}">Eliminar</button>
+      </summary>
+      <div class="conv-body"><textarea rows="9" data-txt="${c.id}" placeholder="Pega aquí el texto limpio del examen de esta convocatoria...">${esc(c.texto)}</textarea></div>
+    </details>`).join('');
+  $$('[data-txt]').forEach(t => t.oninput = () => {
+    const c = state.convocatorias.find(x => x.id === t.dataset.txt);
+    if(c){ c.texto = t.value; const m = t.closest('.conv').querySelector('.conv-meta');
+      m.textContent = t.value.trim() ? t.value.trim().length.toLocaleString('es') + ' caracteres' : 'vacía — pega aquí el examen'; }
+    guardarAuto();
+  });
+  $$('[data-del]').forEach(b => b.onclick = e => {
+    e.preventDefault(); e.stopPropagation();
+    state.convocatorias = state.convocatorias.filter(x => x.id !== b.dataset.del);
+    renderConv(); guardarAuto();
+  });
+}
+$('#btnAdd').onclick = () => {
+  const y = $('#newYear').value.trim() || String(new Date().getFullYear() - state.convocatorias.length);
+  state.convocatorias.push({id: uid(), anio: y, texto: ''});
+  $('#newYear').value = ''; renderConv();
+  const last = $('#convList').lastElementChild?.querySelector('textarea'); last?.focus();
+};
+$('#fileIn').onchange = async e => {
+  for(const f of e.target.files){
+    const txt = await f.text();
+    const y = (f.name.match(/(19|20)\d{2}[\w-]*/) || [f.name.replace(/\.[^.]+$/, '')])[0];
+    state.convocatorias.push({id: uid(), anio: y, texto: txt});
+  }
+  e.target.value = ''; renderConv(); guardarAuto();
+};
+
+function leerForm(){
+  state.asig = $('#asig').value; state.titu = $('#titu').value; state.temario = $('#temario').value;
+  state.dur = $('#dur').value; state.npreg = $('#npreg').value; state.nota = $('#nota').value;
+  state.tipos = $$('#tipos input:checked').map(i => i.value);
+}
+function escribirForm(){
+  $('#asig').value = state.asig; $('#titu').value = state.titu; $('#temario').value = state.temario;
+  $('#dur').value = state.dur; $('#npreg').value = state.npreg; $('#nota').value = state.nota;
+  $$('#tipos input').forEach(i => i.checked = state.tipos.includes(i.value));
+}
+['#asig','#titu','#temario','#dur','#npreg','#nota'].forEach(s => $(s).oninput = () => { leerForm(); guardarAuto(); });
+$$('#tipos input').forEach(i => i.onchange = () => { leerForm(); guardarAuto(); });
+
+/* ---------------- guardado ---------------- */
+let autoT;
+function guardarAuto(){
+  clearTimeout(autoT);
+  autoT = setTimeout(() => {
+    leerForm();
+    dbPut({id:'__auto__', nombre:'(sesión actual)', fecha: Date.now(), datos: snapshot()});
+  }, 600);
+}
+function snapshot(){
+  const {asig, titu, temario, dur, npreg, nota, tipos, convocatorias, dificultad} = state;
+  return {asig, titu, temario, dur, npreg, nota, tipos, convocatorias, dificultad};
+}
+function cargar(d){
+  Object.assign(state, d); state.res = null;
+  escribirForm(); renderConv(); $('#out').innerHTML = ''; pintarPasos(['','','','','']);
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+$('#btnSave').onclick = async () => {
+  leerForm();
+  const n = $('#proyName').value.trim() || (state.asig || 'Análisis') + ' · ' + new Date().toLocaleDateString('es');
+  await dbPut({id: uid(), nombre: n, fecha: Date.now(), datos: snapshot()});
+  $('#proyName').value = ''; listaGuardados();
+};
+async function listaGuardados(){
+  const all = (await dbAll()).filter(p => p.id !== '__auto__').sort((a,b) => b.fecha - a.fecha);
+  $('#savedList').innerHTML = all.length ? all.map(p =>
+    `<span class="saved-item"><a href="#" data-load="${p.id}" style="color:var(--chalk);text-decoration:none">${esc(p.nombre)}</a><button data-drop="${p.id}" title="Eliminar">×</button></span>`).join('')
+    : '<span class="hint">Nada guardado todavía.</span>';
+  $$('[data-load]').forEach(a => a.onclick = async e => { e.preventDefault();
+    const p = (await dbAll()).find(x => x.id === a.dataset.load); if(p) cargar(p.datos); });
+  $$('[data-drop]').forEach(b => b.onclick = async () => { await dbDel(b.dataset.drop); listaGuardados(); });
+}
+
+/* ---------------- exportación ---------------- */
+function informeMD(){
+  const r = state.res; if(!r) return '';
+  const mx = r.mx;
+  let s = `# ConvocatorIA — ${state.asig || 'Análisis de convocatorias'}\n\n`;
+  s += `**${state.titu || ''}**  \nConvocatorias analizadas: ${mx.anios.join(', ')}  \nGenerado: ${new Date().toLocaleString('es')}\n\n`;
+  s += `## Paso 1 — Matriz de convocatorias\n\n| Tema | ${mx.anios.join(' | ')} | Frec. | Peso medio | Tendencia | Conv. sin salir |\n|${'---|'.repeat(mx.anios.length + 5)}\n`;
+  mx.temas.forEach(t => {
+    s += `| ${t.tema} | ${mx.anios.map(y => t.ap[y] ? `${t.ap[y].preguntas} (${t.ap[y].puntos}p)` : '–').join(' | ')} | ${t.veces}/${mx.anios.length} | ${t.pesoMedio.toFixed(1)} | ${t.tendencia} | ${t.desde ?? '—'} |\n`;
+  });
+  s += `\n## Paso 2 — Probabilidad calibrada\n\n`;
+  mx.temas.forEach(t => { s += `- **${t.tema}** — P = ${(t.p*100).toFixed(0)}% (base Laplace ${(t.laplace*100).toFixed(0)}%). ${t.just}\n`; });
+  if(r.p2.aviso) s += `\n> ${r.p2.aviso}\n`;
+  if(r.val){
+    const v = r.val;
+    s += `\n## Paso 3 — Validación ciega\n\nEntrenamiento: ${v.entrenamiento.join(', ')} · Oculta: ${v.holdout}\n\n`;
+    s += `- Temas reales presentes en mi top-5: **${v.cubTop5.toFixed(0)}%**\n- Preguntas reales cubiertas por mi top-10: **${v.pregTop10.toFixed(0)}%**\n- Brier score medio: **${v.brier.toFixed(3)}**\n`;
+  }else{
+    s += `\n## Paso 3 — Validación ciega\n\nNo ejecutada: hacen falta al menos 3 convocatorias.\n`;
+  }
+  if(r.examen){
+    s += `\n## Paso 4 — Examen simulado\n\n${r.examen.instrucciones || ''}\n\n`;
+    (r.examen.preguntas || []).forEach(q => {
+      s += `**${q.n}. ${q.enunciado}**\n`;
+      (q.opciones || []).forEach(o => s += `- ${o}\n`);
+      s += `\n_Tema: ${q.tema} · p=${Math.round((+q.p||0)*100)}% · ${q.verbo} · ${q.puntos} pts_ — ${q.por_que}\n\n`;
+    });
+  }
+  s += `\n## Paso 5 — Plan de estudio\n\n| # | Tema | P | Peso | Dificultad | Pts/hora |\n|---|---|---|---|---|---|\n`;
+  mx.temas.map(t => ({t, d: state.dificultad[t.tema] ?? 3}))
+    .map(o => ({...o, sc: o.t.p * (o.t.pesoMedio || 0.5) / o.d}))
+    .sort((a,b) => b.sc - a.sc)
+    .forEach((o, i) => { s += `| ${i+1} | ${o.t.tema} | ${(o.t.p*100).toFixed(0)}% | ${o.t.pesoMedio.toFixed(1)} | ${o.d}/5 | ${o.sc.toFixed(2)} |\n`; });
+  (r.plan?.prerrequisitos || []).forEach(p => s += `\n- **No abandonar ${p.tema}**: prerrequisito de ${p.requerido_por.join(', ')}. ${p.nota || ''}`);
+  s += `\n\n## Fragilidad\n\n`;
+  (r.plan?.fragiles || []).slice(0,3).forEach(f => s += `- **${f.tema}** — ${f.motivo}\n`);
+  s += `\n> Esta predicción prioriza el estudio, no lo sustituye.\n`;
+  return s;
+}
+function bajar(nombre, contenido, tipo){
+  const b = new Blob([contenido], {type: tipo});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(b); a.download = nombre; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+$('#btnMd').onclick = () => bajar(`convocatoria-${(state.asig||'analisis').replace(/\W+/g,'-').toLowerCase()}.md`, informeMD(), 'text/markdown;charset=utf-8');
+$('#btnDoc').onclick = () => {
+  const md = informeMD()
+    .replace(/^# (.*)$/gm, '<h1>$1</h1>').replace(/^## (.*)$/gm, '<h2>$1</h2>')
+    .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/^> (.*)$/gm, '<blockquote>$1</blockquote>')
+    .replace(/^- (.*)$/gm, '<li>$1</li>').replace(/\n{2,}/g, '</p><p>');
+  const html = `<html xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8">
+  <style>body{font-family:Calibri,sans-serif;font-size:11pt} h1{font-size:20pt} h2{font-size:14pt;border-bottom:1px solid #999} td,th{border:1px solid #bbb;padding:4px;font-size:9pt}</style>
+  </head><body><p>${md}</p></body></html>`;
+  bajar(`convocatoria-${(state.asig||'analisis').replace(/\W+/g,'-').toLowerCase()}.doc`, html, 'application/msword');
+};
+$('#btnPrint').onclick = () => window.print();
+
+/* ---------------- arranque ---------------- */
+(async () => {
+  await openDB();
+  const all = await dbAll();
+  const auto = all.find(p => p.id === '__auto__');
+  if(auto) Object.assign(state, auto.datos);
+  escribirForm(); renderConv(); pintarPasos(['','','','','']); listaGuardados();
+})();
+</script>
+
+<!-- diálogo clave -->
+<div class="dialog" id="dlgKey">
+  <div class="dialog-in">
+    <h3>Clave de la API</h3>
+    <p class="hint" style="margin-bottom:14px">Se guarda en este navegador y no se envía a ningún otro sitio. Obtén la tuya en platform.openai.com.</p>
+    <div class="field"><label for="keyIn">Clave</label><input type="password" id="keyIn" placeholder="sk-..."></div>
+    <div class="field" style="margin-top:12px"><label for="modelIn">Modelo</label>
+      <select id="modelIn">
+        <option value="gpt-4o-mini">gpt-4o-mini — rápido y barato</option>
+        <option value="gpt-4.1-mini">gpt-4.1-mini — equilibrado</option>
+        <option value="gpt-4.1">gpt-4.1 — más preciso</option>
+        <option value="gpt-4o">gpt-4o</option>
+      </select>
+    </div>
+    <div class="row" style="margin-top:18px;justify-content:flex-end">
+      <button class="btn-ghost" id="btnKeyCancel">Cancelar</button>
+      <button class="btn" id="btnKeySave">Guardar clave</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
