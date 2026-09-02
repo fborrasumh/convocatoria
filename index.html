@@ -353,6 +353,27 @@ table.plan td.n{font-family:var(--mono);text-align:right;color:var(--chalk)}
   </div>
 </div>
 
+<!-- diálogo clave -->
+<div class="dialog" id="dlgKey">
+  <div class="dialog-in">
+    <h3>Clave de la API</h3>
+    <p class="hint" style="margin-bottom:14px">Se guarda en este navegador y no se envía a ningún otro sitio. Obtén la tuya en platform.openai.com.</p>
+    <div class="field"><label for="keyIn">Clave</label><input type="password" id="keyIn" placeholder="sk-..."></div>
+    <div class="field" style="margin-top:12px"><label for="modelIn">Modelo</label>
+      <select id="modelIn">
+        <option value="gpt-4o-mini">gpt-4o-mini — rápido y barato</option>
+        <option value="gpt-4.1-mini">gpt-4.1-mini — equilibrado</option>
+        <option value="gpt-4.1">gpt-4.1 — más preciso</option>
+        <option value="gpt-4o">gpt-4o</option>
+      </select>
+    </div>
+    <div class="row" style="margin-top:18px;justify-content:flex-end">
+      <button class="btn-ghost" id="btnKeyCancel">Cancelar</button>
+      <button class="btn" id="btnKeySave">Guardar clave</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* =========================================================
    ConvocatorIA — analista de patrones de examen
@@ -1176,26 +1197,6 @@ $('#btnPrint').onclick = () => window.print();
 })();
 </script>
 
-<!-- diálogo clave -->
-<div class="dialog" id="dlgKey">
-  <div class="dialog-in">
-    <h3>Clave de la API</h3>
-    <p class="hint" style="margin-bottom:14px">Se guarda en este navegador y no se envía a ningún otro sitio. Obtén la tuya en platform.openai.com.</p>
-    <div class="field"><label for="keyIn">Clave</label><input type="password" id="keyIn" placeholder="sk-..."></div>
-    <div class="field" style="margin-top:12px"><label for="modelIn">Modelo</label>
-      <select id="modelIn">
-        <option value="gpt-4o-mini">gpt-4o-mini — rápido y barato</option>
-        <option value="gpt-4.1-mini">gpt-4.1-mini — equilibrado</option>
-        <option value="gpt-4.1">gpt-4.1 — más preciso</option>
-        <option value="gpt-4o">gpt-4o</option>
-      </select>
-    </div>
-    <div class="row" style="margin-top:18px;justify-content:flex-end">
-      <button class="btn-ghost" id="btnKeyCancel">Cancelar</button>
-      <button class="btn" id="btnKeySave">Guardar clave</button>
-    </div>
-  </div>
-</div>
 
 </body>
 </html>
