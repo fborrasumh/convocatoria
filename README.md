@@ -2,7 +2,9 @@
 
 Analista de patrones de examen. Aplicación de un solo fichero (`index.html`), sin servidor ni dependencias de build.
 
-A partir de los exámenes de las últimas convocatorias y del temario oficial:
+Los exámenes se suben como ficheros —**PDF, Word (.docx/.doc), RTF o texto**—, arrastrándolos o seleccionándolos del disco: cada fichero se da de alta como una convocatoria, con la etiqueta deducida del nombre (`Bioestadistica_2024_junio.pdf` → `2024_junio`), y el texto extraído queda editable. La extracción es local (pdf.js y mammoth.js, cargados solo cuando hacen falta).
+
+A partir de ahí, y del temario oficial:
 
 1. **Matriz de convocatorias** — temas × convocatorias, con frecuencia, peso medio en puntos, tendencia y convocatorias transcurridas desde la última aparición (todo calculado en el navegador, no estimado por el modelo).
 2. **Probabilidad calibrada** — P(aparece en el próximo examen) sobre una base de Laplace `(aciertos+1)/(convocatorias+2)`, ajustada por tendencia, peso en la guía docente y efecto rotación, con una línea de justificación por tema.
@@ -20,7 +22,7 @@ Termina declarando los tres temas donde la predicción es más frágil.
 
 ## Privacidad
 
-La clave de la API se guarda en `localStorage` (`ia_openai_key`) y solo viaja a la API del modelo. Los exámenes y los análisis se guardan en IndexedDB del propio navegador.
+La clave de la API se guarda en `localStorage` (`ia_openai_key`) y solo viaja a la API del modelo. Los exámenes y los análisis se guardan en IndexedDB del propio navegador. Los ficheros que subes se leen íntegramente en el navegador: no se suben a ningún servidor.
 
 ## Licencia
 
