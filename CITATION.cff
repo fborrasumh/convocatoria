@@ -1,6 +1,7 @@
 cff-version: 1.2.0
 message: "Si usas este software, cítalo con estos metadatos."
 title: "ConvocatorIA"
+abstract: "Analiza los exámenes anteriores de una asignatura, estima qué temas son probables con validación ciega y comparación frente a la frecuencia, ofrece un simulacro interactivo y organiza un plan de estudio con calendario que no deja ningún tema a cero."
 type: software
 authors:
   - family-names: "Borrás Rocher"
@@ -8,8 +9,15 @@ authors:
     affiliation: "Universidad Miguel Hernández de Elche"
     orcid: "https://orcid.org/0000-0002-5519-4573"
 doi: "10.5281/zenodo.22162071"
-version: "1.0.0"
-date-released: "2026-08-29"
+version: "2.0.0"
+date-released: "2026-09-26"
 url: "https://fborrasumh.github.io/convocatoria/"
 repository-code: "https://github.com/fborrasumh/convocatoria"
 license: MIT
+keywords:
+  - "planificación del estudio"
+  - "exámenes universitarios"
+  - "validación ciega"
+  - "simulacro"
+  - "estudiantes"
+  - "inteligencia artificial"
