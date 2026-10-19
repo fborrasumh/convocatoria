@@ -8,6 +8,11 @@ Analiza los **exámenes de otros años** de una asignatura y el temario oficial 
 
 **Idiomas:** español (por defecto), inglés y portugués, con selector en la barra superior (o `?lang=en` / `?lang=pt` en la URL). La IA responde en el idioma elegido; el simulacro y el plan pueden pedirse además en otra variante (español latinoamericano, portugués de Brasil, catalán, valenciano, gallego, euskera…).
 
+## Novedades de la versión 3.0.1
+
+- **Descarga en Word arreglada.** El documento .docx se genera ahora en el propio navegador, sin cargar librerías externas: ya no aparece «No se pudo cargar una librería: ¿hay conexión?» y funciona sin conexión, con bloqueadores de contenido y en redes institucionales con proxy.
+- La lectura de PDF y Word subidos prueba un servidor alternativo (jsDelivr) si cdnjs no responde, y el mensaje de error explica qué hacer.
+
 ## Novedades de la versión 3.0
 
 - Rediseño con la línea **Forja** de *Herramientas IA para la academia*: portada con autoría y ORCID, «Dónde va cada cosa», ayuda y navegación unificadas.
@@ -54,7 +59,7 @@ Fernando Borrás Rocher (Universidad Miguel Hernández de Elche) · ORCID [0000-
 
 ## Cómo citar
 
-Borrás Rocher, F. (2026). *ConvocatorIA* (versión 3.0.0) [Software]. Universidad Miguel Hernández de Elche. https://doi.org/10.5281/zenodo.22162071
+Borrás Rocher, F. (2026). *ConvocatorIA* (versión 3.0.1) [Software]. Universidad Miguel Hernández de Elche. https://doi.org/10.5281/zenodo.22162071
 
 El DOI anterior es el de concepto: apunta siempre a la última versión. El DOI de cada versión concreta está en [Zenodo](https://doi.org/10.5281/zenodo.22162071). GitHub ofrece la cita en formato APA y BibTeX con el botón *Cite this repository*, a partir de `CITATION.cff`.
 
